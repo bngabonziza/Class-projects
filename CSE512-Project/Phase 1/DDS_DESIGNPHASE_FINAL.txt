@@ -1,0 +1,32 @@
+Spatial Range Queries are used to inquire about certain spatial objects which lie inside a certain query window.In our case we are interested in finding the objects which are within a rectangular window space.The input data set which we are provided with is stored in HDFS using the Spark API.Our work is to display only the objects that are falling inside this window.The data from HDFS is loaded into RDDS using SparkContext function textFile.This function takes in the filename as a parameter.The Algorithm which we will be using to perform Spatial Range Query is the plane-sweep algorithm from computational geometry with slight modifications.In this algorithm we are basically doing two things.
+
+Function Name:SpatialRangeQuery
+Arguments:
+1.String InputLocation1-This is the location of the input dataset1 in HDFS.
+  Input dataset1 schema is: id,x1,y1,x2,y2.Here every row represents a pair of   points(longitude,latitude) which defines a polygon.So this dataset has a bunch   of Polygons.  
+2.String InputLocation2-This is the location of the input dataset2 in HDFS.
+  Input dataset2 schema is: x1,y1,x2,y2.Here we have a pair of points  (longitude,latitude) which defines a polygon.This dataset is our query window   for the range query. 
+3.String OutputLocation-This is the location of the output in HDFS.
+  This will contain the path where we will store the results of the range     query.Here every row will be an id of a polygon.It will have a bunch of Ids.
+
+procedure PLANE_SWEEP_FOR_RANGE(InputSet1,InputSet2,OutputLocation)
+	1.The data set is loaded from HDFS using SparkContext Object.When we use this object to call the textfile function with the filepath in its argument.RDD is returned from this call as 	 JavaRDD<String>. 
+	listA <-- SORT_BY_X-AXIS(InputSet1) [This sorts the polygon in ascending order on x-coordinate values and forms a list.]
+	listB <-- (InputSet2)[Convert this input dataset into a List. i.e the Query Rectangle]
+	sweepStructure<--CREATE_SWEEP_STRUCTURE() [Calling a function CREATE_SWEEP_STRUCTURE().It will have 3 ops]
+	
+	WHILE listA NOT EMPTY:
+		first=listA.FIRST_ELEMENT();//Extracting the first element from the list
+		sweepStructure.INSERT(first);//Inserting into the active list of rectngles
+		sweepStructure.REMOVE_INACTIVE(listB.FIRST_ELEMENT())//It removes from the set of active rectangles that donot overlap the given rectangle window. 
+		if(sweepStructure.SEARCH(listB.FIRST_ELEMENT()))//The SEARCH Function searches for all the activerectangles that intersects the given rectangle window and outputs them.		
+			Emit IDs
+			
+		listA.NEXT();
+	END WHILE
+
+Receive all the Ids from the MAP tasks
+
+Produce Id as Output
+
+Output is written to HDFS using saveAsTextFile("filepath");
